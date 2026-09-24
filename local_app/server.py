@@ -272,11 +272,20 @@ def apply_user_inputs(api, prompt="", negative="", image_ref=None, settings=None
         for node in api.values():
             if "seed" in node.get("inputs", {}) and not isinstance(node["inputs"]["seed"], list):
                 node["inputs"]["seed"] = int(settings["seed"])
-    if "width" in settings or "height" in settings:
+    aspect = settings.get("aspect")
+    dims = {"1:1": (1024,1024), "16:9": (1344,768), "9:16": (768,1344), "4:3": (1152,864), "3:4": (864,1152)}
+    if aspect in dims:
+        width, height = dims[aspect]
         for node in api.values():
             inp = node.get("inputs", {})
-            if "width" in inp and "width" in settings: inp["width"] = int(settings["width"])
-            if "height" in inp and "height" in settings: inp["height"] = int(settings["height"])
+            if "width" in inp and not isinstance(inp["width"], list): inp["width"] = width
+            if "height" in inp and not isinstance(inp["height"], list): inp["height"] = height
+    quality = settings.get("quality")
+    steps = {"draft": 12, "balanced": 24, "quality": 36}.get(quality)
+    if steps:
+        for node in api.values():
+            inp = node.get("inputs", {})
+            if "steps" in inp and not isinstance(inp["steps"], list): inp["steps"] = steps
     return api
 
 def upload_image(filename, data):
