@@ -1,7 +1,8 @@
 const $=s=>document.querySelector(s);
 let comfyReady=false,workflows=[],activeConversationId=null,imageData=null;
 let conversations=loadJSON("lva_conversations_v2",{}),library=loadJSON("lva_library",[]);
-let modalSelection={image:null,video:null};\nlet modalStep=1;
+let modalSelection={image:null,video:null};
+let modalStep=1;
 
 const kinds={image:["Image","🖼️"],retouch:["Retouche","✨"],video:["Vidéo","🎬"],"video-heavy":["Vidéo lourd","🎞️"]};
 
@@ -197,10 +198,7 @@ function setup(){
  $("#newConversation").onclick=openModelModal;
  $("#closeModal").onclick=closeModelModal;
  $("#modelModal").addEventListener("click",e=>{if(e.target.id==="modelModal")closeModelModal()});
- $("#createConversation").onclick=()=>{
-   const missing=[];if(!modalSelection.image)missing.push("image");if(!modalSelection.retouch)missing.push("retouche");if(!modalSelection.video)missing.push("vidéo");
-   if(missing.length){$("#modalError").textContent="Sélectionne un modèle pour chaque bloc.";return}createConversation();
- };
+ $("#stepValidate").onclick=advanceModelStep;
  document.querySelectorAll("[data-search]").forEach(input=>input.addEventListener("input",e=>renderOptions(e.target.dataset.search,e.target.value)));
  $("#conversationSearch").oninput=e=>renderConversationList(e.target.value);
  $("#send").onclick=sendMessage;
