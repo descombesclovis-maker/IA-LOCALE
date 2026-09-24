@@ -34,6 +34,72 @@ def comfy_get(path):
 def comfy_post(path, payload):
     return http_json(COMFY + path, "POST", payload, timeout=60)
 
+def _candidate_comfy_roots():
+    here = Path(__file__).resolve().parent.parent
+    roots = [
+        here / "engine" / "ComfyUI",
+        here / "ComfyUI",
+        Path(os.environ.get("LOCALAPPDATA", "")) / "LocalVisionAI" / "ComfyUI",
+        Path.home() / "ComfyUI",
+        Path("D:/IA LOCAL/ComfyUI"),
+    ]
+    seen = set()
+    for root in roots:
+        try:
+            key = str(root.resolve()).lower()
+        except Exception:
+            key = str(root).lower()
+        if key not in seen:
+            seen.add(key)
+            yield root
+
+def _comfy_launcher(root):
+    for name in ("run_nvidia_gpu.bat", "run_cpu.bat", "run_amd_gpu.bat", "run_intel_gpu.bat"):
+        p = root / name
+        if p.exists():
+            return ("bat", p)
+    for name in ("main.py",):
+        p = root / name
+        if p.exists():
+            return ("python", p)
+    return (None, None)
+
+def ensure_comfyui(timeout=90):
+    online, _ = comfy_online()
+    if online:
+        return True
+    for root in _candidate_comfy_roots():
+        kind, launcher = _comfy_launcher(root)
+        if not launcher:
+            continue
+        try:
+            if kind == "bat":
+                subprocess.Popen(
+                    ["cmd.exe", "/c", "start", '""', "/b", str(launcher)],
+                    cwd=str(root),
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                )
+            else:
+                py = root / "python_embeded" / "python.exe"
+                if not py.exists():
+                    py = sys.executable
+                subprocess.Popen(
+                    [str(py), str(launcher), "--listen", HOST, "--port", "8188"],
+                    cwd=str(root),
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                )
+            deadline = time.time() + timeout
+            while time.time() < deadline:
+                online, _ = comfy_online()
+                if online:
+                    return True
+                time.sleep(1)
+        except Exception:
+            continue
+    return False
+
 def comfy_online():
     try:
         data = comfy_get("/system_stats")
