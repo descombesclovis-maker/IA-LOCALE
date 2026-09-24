@@ -40,7 +40,6 @@
       </div>
 
       <div class="composer-wrap">
-        <div id="imageChip" class="image-chip" hidden><span id="imageName"></span><button id="removeImage">×</button></div>
         <div class="composer">
           <textarea id="prompt" rows="3" placeholder="Écris ton message…"></textarea>
           <div class="composer-row">
@@ -57,28 +56,24 @@
 </div>
 
 <div class="modal-backdrop hidden" id="modelModal">
-  <div class="model-modal" role="dialog" aria-modal="true">
-    <div class="modal-head"><div><h2>Configurer ta conversation</h2><p>Choisis le modèle qui sera utilisé pour chaque type de création.</p></div><button id="closeModal" class="modal-close">×</button></div>
-
-    <div class="task-block" data-task="image">
-      <div class="task-title"><span class="task-number">1</span><div><h3>Avec quel modèle générer ton image</h3><small>Uniquement les modèles photo</small></div></div>
-      <div class="task-search"><span>⌕</span><input data-search="image" placeholder="Rechercher un modèle photo…"></div>
-      <div class="model-options" id="imageOptions"></div>
+  <div class="model-modal step-modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <div><h2 id="modalTitle">Avec quel modèle générer ton image</h2><p id="modalSubtitle">Choisis le modèle photo qui sera utilisé dans cette conversation.</p></div>
+      <button id="closeModal" class="modal-close">×</button>
     </div>
-
-    <div class="task-block" data-task="retouch">
-      <div class="task-title"><span class="task-number">2</span><div><h3>Avec quel modèle retoucher ta photo</h3><small>Uniquement les modèles de retouche</small></div></div>
-      <div class="task-search"><span>⌕</span><input data-search="retouch" placeholder="Rechercher un modèle de retouche…"></div>
-      <div class="model-options" id="retouchOptions"></div>
+    <div class="step-panel" id="imageStep">
+      <div class="step-search task-search"><span>⌕</span><input data-search="image" placeholder="Rechercher un modèle photo…"></div>
+      <div class="model-options step-options" id="imageOptions"></div>
     </div>
-
-    <div class="task-block" data-task="video">
-      <div class="task-title"><span class="task-number">3</span><div><h3>Avec quel modèle générer ta vidéo</h3><small>Uniquement les modèles vidéo</small></div></div>
-      <div class="task-search"><span>⌕</span><input data-search="video" placeholder="Rechercher un modèle vidéo…"></div>
-      <div class="model-options" id="videoOptions"></div>
+    <div class="step-panel hidden" id="videoStep">
+      <div class="step-search task-search"><span>⌕</span><input data-search="video" placeholder="Rechercher un modèle vidéo…"></div>
+      <div class="model-options step-options" id="videoOptions"></div>
     </div>
-
-    <div class="modal-foot"><span id="modalError"></span><button id="createConversation" class="primary-btn">Créer la conversation</button></div>
+    <div class="step-footer">
+      <div class="step-progress"><span id="stepProgress">1/2</span></div>
+      <button id="stepValidate" class="primary-btn">Valider</button>
+    </div>
+    <div id="modalError" class="modal-error"></div>
   </div>
 </div>
 
