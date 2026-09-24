@@ -150,12 +150,14 @@ async function sendMessage(){
  await startGeneration(task,model,text);
 }
 
+function readGenerationSettings(){const seed=Number($("#settingSeed").value);return {quality:$("#settingQuality").value,aspect:$("#settingAspect").value,seed:Number.isFinite(seed)&&seed>0?seed:null,count:Number($("#settingCount").value)||1,enhance:$("#settingEnhance").checked,keepSeed:$("#settingKeep").checked};}
+
 async function startGeneration(task,model,prompt){
  const id=activeConversationId;const c=conversationFor(id);
  c.messages.push({role:"assistant",loading:true,mediaType:task});c.updatedAt=new Date().toISOString();save();renderMessage(c.messages[c.messages.length-1]);scrollBottom();
  $("#send").disabled=true;
  try{
-   const d=await api("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({workflow:model.id,prompt,negative:"",image:imageData?.data||null,image_name:imageData?.name||null})});
+   const d=await api("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({workflow:model.id,prompt,negative:"",image:imageData?.data||null,image_name:imageData?.name||null,settings:readGenerationSettings()})});
    await waitResult(d.prompt_id,id,model,prompt,task);
  }catch(e){removeLoading(id);addMessage(id,{role:"assistant",text:"Erreur de génération : "+e.message});toast(e.message)}
  finally{$("#send").disabled=false}
@@ -205,6 +207,8 @@ function setup(){
  $("#prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}});
  $("#prompt").addEventListener("input",e=>{e.target.style.height="auto";e.target.style.height=Math.min(e.target.scrollHeight,220)+"px"});
  $("#attachBtn").onclick=()=>$("#imageFile").click();
+ $("#settingsBtn").onclick=()=>{$("#generationSettings").classList.toggle("hidden");$("#settingsBtn").classList.toggle("active",!$("#generationSettings").classList.contains("hidden"))};
+ $("#closeSettings").onclick=()=>{$("#generationSettings").classList.add("hidden");$("#settingsBtn").classList.remove("active")};
  $("#imageFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{imageData={data:r.result,name:f.name};};r.readAsDataURL(f)};
  
  $("#photosLibrary").onclick=()=>renderLibrary("image","Mes photos générées");
