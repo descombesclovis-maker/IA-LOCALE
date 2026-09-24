@@ -42,9 +42,9 @@
       <div class="composer-wrap">
         <div class="composer">
           <textarea id="prompt" rows="3" placeholder="Écris ton message…"></textarea>
-          <div class="composer-row">
+          <div id="generationSettings" class="generation-settings hidden"><div class="settings-head"><div><b>Paramètres de génération</b><span>Ajuste le résultat sans quitter la conversation.</span></div><button id="closeSettings" type="button">×</button></div><div class="settings-grid"><label>Qualité<select id="settingQuality"><option value="draft">Rapide</option><option value="balanced" selected>Équilibrée</option><option value="quality">Haute qualité</option></select></label><label>Format<select id="settingAspect"><option value="auto" selected>Automatique</option><option value="1:1">Carré 1:1</option><option value="16:9">Paysage 16:9</option><option value="9:16">Portrait 9:16</option><option value="4:3">4:3</option><option value="3:4">3:4</option></select></label><label>Seed<input id="settingSeed" type="number" placeholder="Aléatoire"></label><label>Nombre de résultats<select id="settingCount"><option value="1" selected>1</option><option value="2">2</option><option value="4">4</option></select></label></div><div class="settings-toggle"><label><input id="settingEnhance" type="checkbox" checked> Optimisation automatique du prompt</label><label><input id="settingKeep" type="checkbox"> Conserver le seed</label></div></div><div class="composer-row">
             <div class="left-tools">
-              <button id="attachBtn" class="round" aria-label="Ajouter une image">＋</button>
+              <button id="attachBtn" class="round" aria-label="Ajouter une image">＋</button><button id="settingsBtn" class="round settings-button" aria-label="Paramètres de génération">⚙</button>
               <input id="imageFile" type="file" accept="image/*" hidden>
             </div>
             <button id="send" class="send" aria-label="Envoyer">↑</button>
