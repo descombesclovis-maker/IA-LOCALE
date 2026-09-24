@@ -9,16 +9,18 @@
       <button class="close-sidebar" id="closeSidebar" aria-label="Fermer">×</button>
     </div>
 
-    <div class="search-wrap"><span>⌕</span><input id="modelSearch" type="search" placeholder="Rechercher un modèle…"></div>
+    <button class="new-conversation" id="newConversation"><span>＋</span><b>Nouvelle conversation</b></button>
+
+    <div class="conversation-search"><span>⌕</span><input id="conversationSearch" type="search" placeholder="Rechercher une conversation…"></div>
 
     <div class="nav-scroll">
-      <div class="section-title">MODÈLES</div>
-      <div id="models" class="models"></div>
+      <div class="section-title">CONVERSATIONS</div>
+      <div id="conversationsList" class="conversations-list"></div>
 
       <div class="section-title library-title">MA BIBLIOTHÈQUE</div>
-      <button class="library-item" id="photosLibrary"><span>▧</span><span>Mes photos générées</span><em id="photoCount">0</em></button>
-      <button class="library-item" id="videosLibrary"><span>▣</span><span>Mes vidéos générées</span><em id="videoCount">0</em></button>
-      <button class="library-item" id="retouchLibrary"><span>✦</span><span>Mes retouches générées</span><em id="retouchCount">0</em></button>
+      <button class="library-item" id="photosLibrary"><span>▧</span><span>Mes photos générées</span><em id="photoCount"></em></button>
+      <button class="library-item" id="videosLibrary"><span>▣</span><span>Mes vidéos générées</span><em id="videoCount"></em></button>
+      <button class="library-item" id="retouchLibrary"><span>✦</span><span>Mes retouches générées</span><em id="retouchCount"></em></button>
     </div>
 
     <div class="sidebar-bottom">
@@ -31,7 +33,7 @@
 
   <main class="main">
     <button class="open-sidebar" id="openSidebar" aria-label="Ouvrir le menu"><span></span><span></span><span></span></button>
-    <section class="content" id="content">
+    <section class="content">
       <div id="chat" class="chat">
         <div id="welcome" class="welcome"><h1>Que veux tu créer ?</h1></div>
         <div id="messages" class="messages"></div>
@@ -40,19 +42,46 @@
       <div class="composer-wrap">
         <div id="imageChip" class="image-chip" hidden><span id="imageName"></span><button id="removeImage">×</button></div>
         <div class="composer">
-          <textarea id="prompt" rows="3" placeholder="Que veux tu créer ?"></textarea>
+          <textarea id="prompt" rows="3" placeholder="Écris ton message…"></textarea>
           <div class="composer-row">
             <div class="left-tools">
               <button id="attachBtn" class="round" aria-label="Ajouter une image">＋</button>
               <input id="imageFile" type="file" accept="image/*" hidden>
             </div>
-            <button id="generate" class="send" aria-label="Envoyer">↑</button>
+            <button id="send" class="send" aria-label="Envoyer">↑</button>
           </div>
         </div>
       </div>
     </section>
   </main>
 </div>
+
+<div class="modal-backdrop hidden" id="modelModal">
+  <div class="model-modal" role="dialog" aria-modal="true">
+    <div class="modal-head"><div><h2>Configurer ta conversation</h2><p>Choisis le modèle qui sera utilisé pour chaque type de création.</p></div><button id="closeModal" class="modal-close">×</button></div>
+
+    <div class="task-block" data-task="image">
+      <div class="task-title"><span class="task-number">1</span><div><h3>Avec quel modèle générer ton image</h3><small>Uniquement les modèles photo</small></div></div>
+      <div class="task-search"><span>⌕</span><input data-search="image" placeholder="Rechercher un modèle photo…"></div>
+      <div class="model-options" id="imageOptions"></div>
+    </div>
+
+    <div class="task-block" data-task="retouch">
+      <div class="task-title"><span class="task-number">2</span><div><h3>Avec quel modèle retoucher ta photo</h3><small>Uniquement les modèles de retouche</small></div></div>
+      <div class="task-search"><span>⌕</span><input data-search="retouch" placeholder="Rechercher un modèle de retouche…"></div>
+      <div class="model-options" id="retouchOptions"></div>
+    </div>
+
+    <div class="task-block" data-task="video">
+      <div class="task-title"><span class="task-number">3</span><div><h3>Avec quel modèle générer ta vidéo</h3><small>Uniquement les modèles vidéo</small></div></div>
+      <div class="task-search"><span>⌕</span><input data-search="video" placeholder="Rechercher un modèle vidéo…"></div>
+      <div class="model-options" id="videoOptions"></div>
+    </div>
+
+    <div class="modal-foot"><span id="modalError"></span><button id="createConversation" class="primary-btn">Créer la conversation</button></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 <script src="/assets/app.js"></script>
 </body></html>
