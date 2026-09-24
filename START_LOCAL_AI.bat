@@ -8,17 +8,24 @@ echo ==========================================================
 echo.
 where py >nul 2>&1
 if %errorlevel%==0 (
+  start "" /b py local_app\server.py
+  timeout /t 2 /nobreak >nul
   start "" http://127.0.0.1:3000
-  py local_app\server.py
-  goto :eof
+  echo Interface : http://127.0.0.1:3000
+  echo Ferme cette fenetre pour arreter l'interface.
+  pause
+  exit /b
 )
 where python >nul 2>&1
 if %errorlevel%==0 (
+  start "" /b python local_app\server.py
+  timeout /t 2 /nobreak >nul
   start "" http://127.0.0.1:3000
-  python local_app\server.py
-  goto :eof
+  echo Interface : http://127.0.0.1:3000
+  echo Ferme cette fenetre pour arreter l'interface.
+  pause
+  exit /b
 )
 echo Python n'est pas disponible dans PATH.
-echo Si ComfyUI Portable est installe, ouvre son dossier et utilise
-echo son python_embeded\python.exe pour lancer local_app\server.py.
+echo Si ComfyUI Portable est installe, utilise son python_embeded\python.exe.
 pause
