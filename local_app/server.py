@@ -320,6 +320,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         u = urlparse(self.path)
         if u.path == "/api/health":
+            ensure_comfyui(timeout=3)
             online, detail = comfy_online()
             self.send_json({"online":online,"detail":detail,"url":COMFY})
             return
@@ -385,8 +386,8 @@ class Handler(BaseHTTPRequestHandler):
             return
         if u.path == "/api/generate":
             try:
-                ok,detail=comfy_online()
-                if not ok: raise RuntimeError("ComfyUI n'est pas démarré sur "+COMFY)
+                ok=ensure_comfyui(timeout=90)
+                if not ok: raise RuntimeError("Le moteur local ComfyUI est introuvable. Place le moteur dans LocalVisionAI/ComfyUI ou utilise l'installateur autonome.")
                 wf=load_workflow(body["workflow"])
                 api=convert_ui_to_api(wf)
                 if not api: raise RuntimeError("Workflow vide ou non convertible")
@@ -412,6 +413,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     print(f"LocalVisionAI -> http://{HOST}:{PORT}")
+    threading.Thread(target=ensure_comfyui, kwargs={"timeout":90}, daemon=True).start()
     print(f"ComfyUI      -> {COMFY}")
     server=ThreadingHTTPServer((HOST,PORT),Handler)
     try: server.serve_forever()
