@@ -1,7 +1,7 @@
 const $=s=>document.querySelector(s);
 let comfyReady=false,workflows=[],activeConversationId=null,imageData=null;
 let conversations=loadJSON("lva_conversations_v2",{}),library=loadJSON("lva_library",[]);
-let modalSelection={image:null,retouch:null,video:null};
+let modalSelection={image:null,video:null};\nlet modalStep=1;
 
 const kinds={image:["Image","🖼️"],retouch:["Retouche","✨"],video:["Vidéo","🎬"],"video-heavy":["Vidéo lourd","🎞️"]};
 
@@ -23,7 +23,7 @@ function renderConversationList(filter=""){
  rows.forEach(c=>{
    const b=document.createElement("button");b.className="conversation-item"+(activeConversationId===c.id?" active":"");
    const ready=!!(c.settings?.image||c.settings?.retouch||c.settings?.video);
-   const kindsUsed=[c.settings?.image,c.settings?.retouch,c.settings?.video].filter(Boolean).length;
+   const kindsUsed=[c.settings?.image,c.settings?.video].filter(Boolean).length;
    b.innerHTML='<span class="conversation-icon">◌</span><span class="conversation-main"><span class="conversation-title">'+esc(titleForConversation(c))+'</span><span class="conversation-meta">'+kindsUsed+' modèle'+(kindsUsed>1?"s":"")+' sélectionné'+(kindsUsed>1?"s":"")+'</span></span><i class="conversation-dot '+(ready?"ready":"")+'"></i>';
    b.onclick=()=>openConversation(c.id);box.appendChild(b);
  });
@@ -58,7 +58,7 @@ function scrollBottom(){requestAnimationFrame(()=>{$("#chat").scrollTop=$("#chat
 function addMessage(id,m){const c=conversationFor(id);c.messages.push(m);c.updatedAt=new Date().toISOString();c.title=c.title==="Nouvelle conversation"&&m.role==="user"?m.text.slice(0,48)+(m.text.length>48?"…":""):c.title;save();renderConversationList($("#conversationSearch").value);$("#welcome").classList.add("hidden");renderMessage(m);scrollBottom()}
 function removeLoading(id){const c=conversationFor(id);c.messages=c.messages.filter(m=>!m.loading);c.updatedAt=new Date().toISOString();save();$("#messages").querySelectorAll(".generation-frame[data-loading='1']").forEach(x=>x.parentElement.remove());}
 
-function resultKindForModel(model){return model?.kind==="retouch"?"retouch":model?.kind==="video"||model?.kind==="video-heavy"?"video":"image"}
+function resultKindForModel(model){return model?.kind==="video"||model?.kind==="video-heavy"?"video":"image"}
 function selectedModelForConversation(c,task){const id=c.settings?.[task];return workflows.find(w=>w.id===id)||null}
 
 function renderOptions(task,filter=""){
@@ -74,19 +74,35 @@ function renderOptions(task,filter=""){
    box.appendChild(b);
  });
 }
-
+function setModalStep(step){
+ modalStep=step;
+ $("#imageStep").classList.toggle("hidden",step!==1);
+ $("#videoStep").classList.toggle("hidden",step!==2);
+ $("#modalTitle").textContent=step===1?"Avec quel modèle générer ton image":"Avec quel modèle générer ta vidéo";
+ $("#modalSubtitle").textContent=step===1?"Choisis le modèle photo qui sera utilisé dans cette conversation.":"Choisis le modèle vidéo qui sera utilisé dans cette conversation.";
+ $("#stepProgress").textContent=step+"/2";
+ $("#stepValidate").textContent=step===1?"Valider":"Créer la conversation";
+ $("#modalError").textContent="";
+ if(step===1)renderOptions("image");else renderOptions("video");
+}
 function openModelModal(){
- modalSelection={image:null,retouch:null,video:null};$("#modalError").textContent="";
- renderOptions("image");renderOptions("retouch");renderOptions("video");
+ modalSelection={image:null,video:null};setModalStep(1);
  $("#modelModal").classList.remove("hidden");
 }
 function closeModelModal(){$("#modelModal").classList.add("hidden")}
 function createConversation(){
- const c={id:crypto.randomUUID(),title:"Nouvelle conversation",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),settings:{...modalSelection},messages:[]};
+ const c={id:crypto.randomUUID(),title:"Nouvelle conversation",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),settings:{image:modalSelection.image,retouch:null,video:modalSelection.video},messages:[]};
  conversations[c.id]=c;activeConversationId=c.id;save();renderConversationList();closeModelModal();openConversation(c.id);
  toast("Conversation créée.");
 }
-
+function advanceModelStep(){
+ if(modalStep===1){
+   if(!modalSelection.image){$("#modalError").textContent="Sélectionne un modèle photo avant de continuer.";return}
+   setModalStep(2);return;
+ }
+ if(!modalSelection.video){$("#modalError").textContent="Sélectionne un modèle vidéo avant de créer la conversation.";return}
+ createConversation();
+}
 function renderLibrary(kind,title){
  $("#welcome").classList.add("hidden");$("#messages").innerHTML="";
  const box=document.createElement("div");box.className="library-view";
@@ -191,8 +207,8 @@ function setup(){
  $("#prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}});
  $("#prompt").addEventListener("input",e=>{e.target.style.height="auto";e.target.style.height=Math.min(e.target.scrollHeight,220)+"px"});
  $("#attachBtn").onclick=()=>$("#imageFile").click();
- $("#imageFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{imageData={data:r.result,name:f.name};$("#imageName").textContent=f.name;$("#imageChip").hidden=false};r.readAsDataURL(f)};
- $("#removeImage").onclick=()=>{imageData=null;$("#imageChip").hidden=true;$("#imageFile").value=""};
+ $("#imageFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{imageData={data:r.result,name:f.name};};r.readAsDataURL(f)};
+ 
  $("#photosLibrary").onclick=()=>renderLibrary("image","Mes photos générées");
  $("#videosLibrary").onclick=()=>renderLibrary("video","Mes vidéos générées");
  $("#retouchLibrary").onclick=()=>renderLibrary("retouch","Mes retouches générées");
