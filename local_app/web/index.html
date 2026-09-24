@@ -3,25 +3,56 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LocalVisionAI</title><link rel="stylesheet" href="/assets/style.css"></head>
 <body>
 <div class="app">
-<aside class="sidebar">
-<div class="brand"><div class="brand-mark">✦</div><div><b>LocalVision</b><span>AI</span></div></div>
-<button class="new-chat" id="newChat">＋ Nouvelle création</button>
-<div class="section-title">MODÈLES</div><div id="models" class="models"></div>
-<div class="sidebar-bottom">
-<button id="importBtn" class="ghost">＋ Importer un workflow</button><input id="workflowFile" type="file" accept=".json,application/json" hidden>
-<button id="comfyBtn" class="ghost">Ouvrir ComfyUI</button>
-<div class="status"><i id="statusDot"></i><span id="statusText">Vérification…</span></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <div class="brand"><div class="brand-mark">✦</div><div><b>LocalVision</b><span>AI</span></div></div>
+      <button class="close-sidebar" id="closeSidebar" aria-label="Fermer">×</button>
+    </div>
+
+    <div class="search-wrap"><span>⌕</span><input id="modelSearch" type="search" placeholder="Rechercher un modèle…"></div>
+
+    <div class="nav-scroll">
+      <div class="section-title">MODÈLES</div>
+      <div id="models" class="models"></div>
+
+      <div class="section-title library-title">MA BIBLIOTHÈQUE</div>
+      <button class="library-item" id="photosLibrary"><span>▧</span><span>Mes photos générées</span><em id="photoCount">0</em></button>
+      <button class="library-item" id="videosLibrary"><span>▣</span><span>Mes vidéos générées</span><em id="videoCount">0</em></button>
+      <button class="library-item" id="retouchLibrary"><span>✦</span><span>Mes retouches générées</span><em id="retouchCount">0</em></button>
+    </div>
+
+    <div class="sidebar-bottom">
+      <button id="importBtn" class="ghost">＋ Importer un workflow</button>
+      <input id="workflowFile" type="file" accept=".json,application/json" hidden>
+      <button id="comfyBtn" class="ghost">Ouvrir ComfyUI</button>
+      <div class="status"><i></i><span id="statusText">Vérification…</span></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <button class="open-sidebar" id="openSidebar" aria-label="Ouvrir le menu"><span></span><span></span><span></span></button>
+    <section class="content" id="content">
+      <div id="chat" class="chat">
+        <div id="welcome" class="welcome"><h1>Que veux tu créer</h1></div>
+        <div id="messages" class="messages"></div>
+      </div>
+
+      <div class="composer-wrap">
+        <div id="imageChip" class="image-chip" hidden><span id="imageName"></span><button id="removeImage">×</button></div>
+        <div class="composer">
+          <textarea id="prompt" rows="3" placeholder="Que veux tu créer ?"></textarea>
+          <div class="composer-row">
+            <div class="left-tools">
+              <button id="attachBtn" class="round" aria-label="Ajouter une image">＋</button>
+              <input id="imageFile" type="file" accept="image/*" hidden>
+            </div>
+            <button id="generate" class="send" aria-label="Envoyer">↑</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
 </div>
-</aside>
-<main class="main">
-<header class="topbar"><div><strong id="modelName">Sélectionne un modèle</strong><small id="modelMeta">Workflow local</small></div><button id="settingsBtn" class="icon-btn">⚙</button></header>
-<section class="content">
-<div id="empty" class="empty"><div class="spark">✦</div><h1>Que veux-tu créer ?</h1><p>Décris ton image ou ta vidéo. Le workflow ComfyUI sélectionné fait le travail localement.</p>
-<div class="suggestions"><button data-preset="image">🖼️ Créer une image</button><button data-preset="video">🎬 Animer une image</button><button data-preset="heavy">🎞️ Vidéo lourde</button><button data-preset="import">＋ Ajouter un workflow</button></div></div>
-<div id="gallery" class="gallery"></div>
-<div class="composer-wrap"><div id="imageChip" class="image-chip" hidden><span id="imageName"></span><button id="removeImage">×</button></div>
-<div class="composer"><textarea id="prompt" rows="1" placeholder="Décris ce que tu veux créer…"></textarea><div class="composer-row"><div class="left-tools"><button id="attachBtn" class="round">＋</button><input id="imageFile" type="file" accept="image/*" hidden><span id="modeLabel">Mode automatique</span></div><button id="generate" class="send">↑</button></div></div>
-<div class="hint">Tout reste sur ton PC. Les workflows sont chargés depuis ce dépôt local.</div></div>
-</section>
-</main></div><div id="toast"></div><script src="/assets/app.js"></script>
+<div id="toast"></div>
+<script src="/assets/app.js"></script>
 </body></html>
