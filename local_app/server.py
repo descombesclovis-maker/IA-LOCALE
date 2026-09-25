@@ -4,7 +4,10 @@ from pathlib import Path
 from urllib.parse import urlparse, parse_qs, quote
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
-import llm
+try:
+    from local_app import llm
+except ImportError:
+    import llm
 
 ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
 DATA = Path(os.environ.get("LOCALVISIONAI_DATA", str(Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "LocalVisionAI")))
