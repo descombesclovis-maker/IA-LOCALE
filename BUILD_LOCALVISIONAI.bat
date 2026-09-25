@@ -17,6 +17,9 @@ if not exist dist mkdir dist
 
 pyinstaller --noconfirm --clean --onefile --windowed --name LocalVisionAI ^
   --collect-all webview ^
+  --hidden-import local_app.bootstrap_windows ^
+  --hidden-import local_app.server ^
+  --hidden-import local_app.llm ^
   --add-data "local_app\web;local_app\web" ^
   --add-data "local_app\bootstrap_windows.py;local_app" ^
   --add-data "local_app\server.py;local_app" ^
