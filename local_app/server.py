@@ -458,13 +458,25 @@ class Handler(BaseHTTPRequestHandler):
             return
         self.send_response(404); self.end_headers()
 
+def _first_run_setup():
+    try:
+        from local_app import bootstrap_windows
+        print("[LocalVisionAI] Vérification/installation des composants locaux…")
+        bootstrap_windows.run()
+        print("[LocalVisionAI] Installation locale terminée.")
+        ensure_comfyui(timeout=180)
+        llm.ensure_server(timeout=180)
+    except Exception as exc:
+        print("[LocalVisionAI] Installation automatique en erreur:", exc)
+
 def main():
     print(f"LocalVisionAI -> http://{HOST}:{PORT}")
-    threading.Thread(target=ensure_comfyui, kwargs={"timeout":90}, daemon=True).start()
-    threading.Thread(target=llm.ensure_server, kwargs={"timeout":45}, daemon=True).start()
+    server=ThreadingHTTPServer((HOST,PORT),Handler)
+    threading.Thread(target=_first_run_setup, daemon=True).start()
+    threading.Thread(target=ensure_comfyui, kwargs={"timeout":180}, daemon=True).start()
+    threading.Thread(target=llm.ensure_server, kwargs={"timeout":180}, daemon=True).start()
     print(f"ComfyUI      -> {COMFY}")
     print(f"LLM          -> {llm.URL}")
-    server=ThreadingHTTPServer((HOST,PORT),Handler)
     try: server.serve_forever()
     except KeyboardInterrupt: pass
     finally: server.server_close()
