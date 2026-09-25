@@ -4,6 +4,7 @@ from pathlib import Path
 from urllib.parse import urlparse, parse_qs, quote
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
+from local_app import llm
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / "local_app" / "web"
@@ -333,7 +334,10 @@ class Handler(BaseHTTPRequestHandler):
         if u.path == "/api/health":
             ensure_comfyui(timeout=3)
             online, detail = comfy_online()
-            self.send_json({"online":online,"detail":detail,"url":COMFY})
+            self.send_json({"online":online,"detail":detail,"url":COMFY,"llm":llm.status()})
+            return
+        if u.path == "/api/llm":
+            self.send_json(llm.status())
             return
         if u.path == "/api/workflows":
             self.send_json({"workflows":scan_workflows()})
@@ -395,6 +399,19 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"ok":True,"file":result})
             except Exception as e: self.send_json({"error":str(e)},502)
             return
+        if u.path == "/api/chat":
+            try:
+                messages = body.get("messages") or []
+                if not messages:
+                    raise ValueError("Aucun message à envoyer.")
+                answer = llm.chat(messages, body.get("settings") or {})
+                self.send_json({"ok":True,"message":answer})
+            except HTTPError as e:
+                try: detail=e.read().decode()
+                except: detail=str(e)
+                self.send_json({"error":detail},502)
+            except Exception as e: self.send_json({"error":str(e)},400)
+            return
         if u.path == "/api/generate":
             try:
                 ok=ensure_comfyui(timeout=90)
@@ -441,6 +458,7 @@ def main():
     print(f"LocalVisionAI -> http://{HOST}:{PORT}")
     threading.Thread(target=ensure_comfyui, kwargs={"timeout":90}, daemon=True).start()
     print(f"ComfyUI      -> {COMFY}")
+    print(f"LLM          -> {llm.URL}")
     server=ThreadingHTTPServer((HOST,PORT),Handler)
     try: server.serve_forever()
     except KeyboardInterrupt: pass
