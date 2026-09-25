@@ -1,25 +1,62 @@
 @echo off
-setlocal
+setlocal EnableExtensions
 cd /d "%~dp0"
-title LocalVisionAI
+title LocalVisionAI - moteur local
 
-if exist "%USERPROFILE%\Desktop\LocalVisionAI.exe" (
-  start "" "%USERPROFILE%\Desktop\LocalVisionAI.exe"
-  exit /b 0
-)
+echo.
+echo ==========================================
+echo          LocalVisionAI - LOCAL
+echo ==========================================
+echo.
 
-rem Un seul point d'entrée : le launcher démarre lui-même ComfyUI + llama.cpp + l'interface native.
 where py >nul 2>&1
 if not errorlevel 1 (
-  py local_app\launcher.py
-  exit /b %errorlevel%
-)
-where python >nul 2>&1
-if not errorlevel 1 (
-  python local_app\launcher.py
-  exit /b %errorlevel%
+    set "PY=py"
+    goto :python_ok
 )
 
-echo Python n'est pas disponible. Lance BUILD_LOCALVISIONAI.bat une fois pour fabriquer l'application autonome.
+where python >nul 2>&1
+if not errorlevel 1 (
+    set "PY=python"
+    goto :python_ok
+)
+
+echo [ERREUR] Python n'est pas installe.
+echo Installe Python 3.11+ puis relance ce fichier.
 pause
 exit /b 1
+
+:python_ok
+echo [1/3] Verification de pywebview...
+%PY% -m pip show pywebview >nul 2>&1
+if errorlevel 1 (
+    echo Installation de pywebview...
+    %PY% -m pip install pywebview
+    if errorlevel 1 (
+        echo [ERREUR] Impossible d'installer pywebview.
+        pause
+        exit /b 1
+    )
+)
+
+echo [2/3] Demarrage du serveur LOCAL...
+echo       Aucun navigateur ne sera ouvert.
+echo       ComfyUI + llama.cpp sont geres automatiquement.
+echo.
+
+%PY% local_app\launcher.py
+
+set "ERR=%errorlevel%"
+if not "%ERR%"=="0" (
+    echo.
+    echo [ERREUR] LocalVisionAI s'est arrete avec le code %ERR%.
+    echo Journal :
+    echo %LOCALAPPDATA%\LocalVisionAI\logs\startup.log
+    echo.
+    pause
+    exit /b %ERR%
+)
+
+echo.
+echo LocalVisionAI ferme.
+exit /b 0
