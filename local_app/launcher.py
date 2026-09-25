@@ -1,57 +1,43 @@
-import subprocess, sys, time
+import os, sys, time, threading
 from pathlib import Path
 from urllib.request import urlopen
 
-ROOT = Path(__file__).resolve().parent.parent
+FROZEN = bool(getattr(sys, "frozen", False))
+ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
+DATA = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData/Local"))) / "LocalVisionAI"
+os.environ["LOCALVISIONAI_DATA"] = str(DATA)
 
-def wait_for_server(timeout=30):
-    deadline = time.time() + timeout
-    while time.time() < deadline:
+
+def wait_for_server(timeout=120):
+    deadline=time.time()+timeout
+    while time.time()<deadline:
         try:
-            with urlopen("http://127.0.0.1:3000/api/health", timeout=1) as r:
-                if r.status == 200:
-                    return True
-        except Exception:
-            pass
-        time.sleep(0.5)
+            with urlopen("http://127.0.0.1:3000/api/health",timeout=2) as r:
+                if r.status==200: return True
+        except Exception: pass
+        time.sleep(.5)
     return False
 
+
 def main():
-    bootstrap = ROOT / "local_app" / "bootstrap_windows.py"
-    if bootstrap.exists():
-        subprocess.run([sys.executable, str(bootstrap)], check=False)
+    # First-run setup is performed before the UI appears. In a frozen build,
+    # bootstrap.py is bundled and imported from PyInstaller's temporary folder.
+    from local_app import bootstrap_windows
+    bootstrap_windows.run()
 
-    server = ROOT / "local_app" / "server.py"
-    proc = subprocess.Popen([sys.executable, str(server)], cwd=str(ROOT))
-
+    import local_app.server as server
+    server_thread=threading.Thread(target=server.main,daemon=True)
+    server_thread.start()
     if not wait_for_server():
-        proc.terminate()
-        raise RuntimeError("LocalVisionAI n'a pas réussi à démarrer son moteur local.")
+        raise RuntimeError("Les moteurs locaux n'ont pas pu démarrer. Consulte le journal LocalVisionAI dans AppData\\Local\\LocalVisionAI.")
 
     try:
         import webview
-    except ImportError:
-        proc.terminate()
-        raise RuntimeError("Le composant d'interface native pywebview est absent. Reconstruis LocalVisionAI.exe.")
+    except ImportError as exc:
+        raise RuntimeError("pywebview est absent du paquet LocalVisionAI.") from exc
 
-    window = webview.create_window(
-        "LocalVisionAI",
-        "http://127.0.0.1:3000",
-        width=1440,
-        height=920,
-        min_size=(1100, 700),
-        resizable=True,
-        background_color="#090909",
-    )
-    try:
-        webview.start(debug=False)
-    finally:
-        if proc.poll() is None:
-            proc.terminate()
-            try:
-                proc.wait(timeout=5)
-            except Exception:
-                proc.kill()
+    window=webview.create_window("LocalVisionAI","http://127.0.0.1:3000",width=1440,height=920,
+                                  min_size=(1100,700),resizable=True,background_color="#090909")
+    webview.start(debug=False)
 
-if __name__ == "__main__":
-    main()
+if __name__=="__main__": main()
