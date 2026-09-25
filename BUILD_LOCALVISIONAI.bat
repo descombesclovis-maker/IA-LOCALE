@@ -16,7 +16,7 @@ if errorlevel 1 goto FAIL
 if exist build rmdir /s /q build
 if exist dist rmdir /s /q dist
 
-pyinstaller --noconfirm --clean --onefile --windowed --name LocalVisionAI ^
+pyinstaller --noconfirm --clean --onefile --windowed --noupx --name LocalVisionAI ^
   --collect-all webview ^
   --hidden-import local_app ^
   --hidden-import local_app.bootstrap_windows ^
