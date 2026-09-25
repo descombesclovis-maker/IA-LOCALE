@@ -268,10 +268,12 @@ def apply_user_inputs(api, prompt="", negative="", image_ref=None, settings=None
                 if k in {"image","start_image","input_image","init_image"} and not isinstance(node["inputs"][key], list):
                     node["inputs"][key] = image_ref["name"]
                     break
-    if "seed" in settings:
-        for node in api.values():
-            if "seed" in node.get("inputs", {}) and not isinstance(node["inputs"]["seed"], list):
-                node["inputs"]["seed"] = int(settings["seed"])
+    requested_seed = settings.get("seed")
+    if requested_seed is None:
+        requested_seed = uuid.uuid4().int % 2147483647
+    for node in api.values():
+        if "seed" in node.get("inputs", {}) and not isinstance(node["inputs"]["seed"], list):
+            node["inputs"]["seed"] = int(requested_seed)
     aspect = settings.get("aspect")
     dims = {"1:1": (1024,1024), "16:9": (1344,768), "9:16": (768,1344), "4:3": (1152,864), "3:4": (864,1152)}
     if aspect in dims:
@@ -404,9 +406,24 @@ class Handler(BaseHTTPRequestHandler):
                 if body.get("image"):
                     b64=body["image"].split(",",1)[-1]
                     image_ref=upload_image(Path(body.get("image_name","input.png")).name,base64.b64decode(b64))
-                api=apply_user_inputs(api,body.get("prompt",""),body.get("negative",""),image_ref,body.get("settings"))
-                result=queue_prompt(api)
-                self.send_json({"ok":True,"prompt_id":result.get("prompt_id"),"queue":result})
+                settings = body.get("settings") or {}
+                count = max(1, min(int(settings.get("count") or 1), 4))
+                base_seed = settings.get("seed")
+                prompt_ids = []
+                queue_results = []
+                for index in range(count):
+                    current = json.loads(json.dumps(api))
+                    run_settings = dict(settings)
+                    if base_seed is None:
+                        run_settings["seed"] = (uuid.uuid4().int + index) % 2147483647
+                    else:
+                        run_settings["seed"] = int(base_seed) if settings.get("keepSeed") else (int(base_seed) + index) % 2147483647
+                    current = apply_user_inputs(current,body.get("prompt",""),body.get("negative",""),image_ref,run_settings)
+                    result = queue_prompt(current)
+                    if result.get("prompt_id"):
+                        prompt_ids.append(result["prompt_id"])
+                    queue_results.append(result)
+                self.send_json({"ok":True,"prompt_id":prompt_ids[0] if prompt_ids else None,"prompt_ids":prompt_ids,"queue":queue_results})
             except HTTPError as e:
                 try: detail=e.read().decode()
                 except: detail=str(e)
