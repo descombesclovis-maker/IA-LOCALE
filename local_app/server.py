@@ -6,9 +6,10 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 import llm
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
+DATA = Path(os.environ.get("LOCALVISIONAI_DATA", str(Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "LocalVisionAI")))
 WEB = ROOT / "local_app" / "web"
-IMPORTED = ROOT / "workflows" / "imported"
+IMPORTED = DATA / "workflows" / "imported"
 IMPORTED.mkdir(parents=True, exist_ok=True)
 HOST = "127.0.0.1"
 PORT = 3000
