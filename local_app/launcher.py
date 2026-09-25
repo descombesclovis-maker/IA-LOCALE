@@ -1,9 +1,8 @@
-import os, sys, time, threading, json, traceback
+import os, sys, time, subprocess, json, traceback
 from pathlib import Path
 from urllib.request import urlopen
 from contextlib import redirect_stdout, redirect_stderr
 
-FROZEN = bool(getattr(sys, "frozen", False))
 ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -13,12 +12,12 @@ LOG_DIR = DATA / "logs"
 LOG_FILE = LOG_DIR / "startup.log"
 
 
-def wait_for_server_interface(timeout=60):
-    deadline=time.time()+timeout
-    while time.time()<deadline:
+def wait_for_interface(timeout=90):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
         try:
-            with urlopen("http://127.0.0.1:3000/api/health",timeout=3) as r:
-                if r.status==200:
+            with urlopen("http://127.0.0.1:3000/api/health", timeout=2) as r:
+                if r.status == 200:
                     return True
         except Exception:
             pass
@@ -34,35 +33,91 @@ def show_error(message):
         pass
 
 
-def main():
+def run_server():
     DATA.mkdir(parents=True, exist_ok=True)
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     with open(LOG_FILE, "a", encoding="utf-8") as log:
         with redirect_stdout(log), redirect_stderr(log):
-            print("\n=== LocalVisionAI démarrage ===")
-            print("Python:", sys.executable)
-            print("Root:", ROOT)
-            print("Data:", DATA)
+            print("\n=== LocalVisionAI SERVER ===", flush=True)
             try:
-                # The server/UI must never wait for multi-GB first-run downloads.
                 import local_app.server as server
-                threading.Thread(target=server.main, daemon=True).start()
-                if not wait_for_server_interface():
-                    raise RuntimeError("Le serveur LocalVisionAI n'a pas répondu dans le délai prévu.")
-
-                import webview
-                webview.create_window(
-                    "LocalVisionAI", "http://127.0.0.1:3000",
-                    width=1440, height=920, min_size=(1100,700),
-                    resizable=True, background_color="#090909"
-                )
-                webview.start(debug=False)
-            except Exception as exc:
+                server.main()
+            except Exception:
                 traceback.print_exc()
-                show_error("LocalVisionAI n’a pas pu démarrer.\n\nConsulte le journal :\n"
-                           + str(LOG_FILE) + "\n\nErreur : " + str(exc))
                 raise
 
 
-if __name__=="__main__":
-    main()
+def main():
+    DATA.mkdir(parents=True, exist_ok=True)
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    server_process = None
+    try:
+        # In a frozen EXE the server gets its own process. This prevents
+        # background-thread/import failures from silently killing the server.
+        if getattr(sys, "frozen", False):
+            cmd = [sys.executable, "--server"]
+        else:
+            cmd = [sys.executable, str(Path(__file__).resolve()), "--server"]
+
+        server_log = open(LOG_FILE, "a", encoding="utf-8")
+        server_process = subprocess.Popen(
+            cmd,
+            cwd=str(DATA),
+            stdout=server_log,
+            stderr=server_log,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        )
+
+        if not wait_for_interface():
+            code = server_process.poll()
+            raise RuntimeError(
+                "Le serveur local n'a pas répondu. "
+                + ("Le processus serveur s'est arrêté (code %s)." % code if code is not None
+                   else "Le processus serveur est toujours lancé mais le port 3000 ne répond pas.")
+            )
+
+        import webview
+        window = webview.create_window(
+            "LocalVisionAI", "http://127.0.0.1:3000",
+            width=1440, height=920, min_size=(1100, 700),
+            resizable=True, background_color="#090909"
+        )
+
+        def cleanup():
+            if server_process and server_process.poll() is None:
+                server_process.terminate()
+                try:
+                    server_process.wait(timeout=5)
+                except Exception:
+                    server_process.kill()
+            try:
+                server_log.close()
+            except Exception:
+                pass
+
+        window.events.closed += cleanup
+        webview.start(debug=False)
+
+    except Exception as exc:
+        traceback_text = traceback.format_exc()
+        try:
+            LOG_DIR.mkdir(parents=True, exist_ok=True)
+            with open(LOG_FILE, "a", encoding="utf-8") as log:
+                log.write("\n=== ERREUR LAUNCHER ===\n" + traceback_text)
+        except Exception:
+            pass
+        show_error(
+            "LocalVisionAI n’a pas pu démarrer.\n\n"
+            "Journal :\n" + str(LOG_FILE) + "\n\n"
+            + str(exc)
+        )
+        if server_process and server_process.poll() is None:
+            server_process.terminate()
+        raise
+
+
+if __name__ == "__main__":
+    if "--server" in sys.argv:
+        run_server()
+    else:
+        main()
