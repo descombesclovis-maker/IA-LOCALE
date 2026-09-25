@@ -457,6 +457,7 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     print(f"LocalVisionAI -> http://{HOST}:{PORT}")
     threading.Thread(target=ensure_comfyui, kwargs={"timeout":90}, daemon=True).start()
+    threading.Thread(target=llm.ensure_server, kwargs={"timeout":45}, daemon=True).start()
     print(f"ComfyUI      -> {COMFY}")
     print(f"LLM          -> {llm.URL}")
     server=ThreadingHTTPServer((HOST,PORT),Handler)
