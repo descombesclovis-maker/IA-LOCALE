@@ -3,6 +3,11 @@ setlocal
 cd /d "%~dp0"
 title LocalVisionAI
 
+if exist "%USERPROFILE%\Desktop\LocalVisionAI.exe" (
+  start "" "%USERPROFILE%\Desktop\LocalVisionAI.exe"
+  exit /b 0
+)
+
 rem Un seul point d'entrée : le launcher démarre lui-même ComfyUI + llama.cpp + l'interface native.
 where py >nul 2>&1
 if not errorlevel 1 (
