@@ -1,6 +1,7 @@
 import os, sys, time, threading
 from pathlib import Path
 from urllib.request import urlopen
+import json
 
 FROZEN = bool(getattr(sys, "frozen", False))
 ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
@@ -8,14 +9,18 @@ DATA = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData/Local"))) 
 os.environ["LOCALVISIONAI_DATA"] = str(DATA)
 
 
-def wait_for_server(timeout=120):
+def wait_for_server(timeout=900):
     deadline=time.time()+timeout
     while time.time()<deadline:
         try:
-            with urlopen("http://127.0.0.1:3000/api/health",timeout=2) as r:
-                if r.status==200: return True
-        except Exception: pass
-        time.sleep(.5)
+            with urlopen("http://127.0.0.1:3000/api/health",timeout=3) as r:
+                if r.status==200:
+                    data=json.loads(r.read().decode("utf-8"))
+                    if data.get("online") and (data.get("llm") or {}).get("online"):
+                        return True
+        except Exception:
+            pass
+        time.sleep(1)
     return False
 
 
