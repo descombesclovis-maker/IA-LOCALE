@@ -54,18 +54,22 @@ def main():
     try:
         # In a frozen EXE the server gets its own process. This prevents
         # background-thread/import failures from silently killing the server.
+        executable = Path(sys.executable).resolve()
         if getattr(sys, "frozen", False):
-            cmd = [sys.executable, "--server"]
+            cmd = [str(executable), "--server"]
         else:
-            cmd = [sys.executable, str(Path(__file__).resolve()), "--server"]
+            cmd = [str(executable), str(Path(__file__).resolve()), "--server"]
 
+        DATA.mkdir(parents=True, exist_ok=True)
         server_log = open(LOG_FILE, "a", encoding="utf-8")
         server_process = subprocess.Popen(
             cmd,
-            cwd=str(DATA),
+            cwd=str(DATA.resolve()),
+            executable=str(executable),
             stdout=server_log,
             stderr=server_log,
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            close_fds=False
         )
 
         if not wait_for_interface():
