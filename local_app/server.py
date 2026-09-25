@@ -4,7 +4,7 @@ from pathlib import Path
 from urllib.parse import urlparse, parse_qs, quote
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
-from local_app import llm
+import llm
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / "local_app" / "web"
