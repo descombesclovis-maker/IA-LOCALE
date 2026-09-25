@@ -117,6 +117,9 @@ def ensure_model():
 
 def run():
     DATA.mkdir(parents=True, exist_ok=True)
+    free = shutil.disk_usage(DATA).free
+    if free < 12 * 1024 * 1024 * 1024:
+        raise RuntimeError("Espace disque insuffisant : au moins 12 Go libres sont nécessaires pour l’installation initiale.")
     ensure_comfy()
     ensure_llama()
     ensure_model()
