@@ -44,8 +44,11 @@ function renderMessage(m){
  const wrap=document.createElement("div");wrap.className="message "+(m.role==="user"?"user":"assistant");
  if(m.text){const b=document.createElement("div");b.className="bubble";b.textContent=m.text;wrap.appendChild(b)}
  if(m.loading){
-   const label=document.createElement("div");label.className="generation-label";label.textContent=m.mediaType==="video"?"Génération de la vidéo…":m.mediaType==="retouch"?"Génération de la retouche…":"Génération de la photo…";wrap.appendChild(label);
-   const f=document.createElement("div");f.className="generation-frame loading";f.dataset.loading="1";f.innerHTML='<div class="loader"></div>';wrap.appendChild(f);
+   if(m.chatLoading){const b=document.createElement("div");b.className="bubble loading-bubble";b.innerHTML='<span class="chat-dots"><i></i><i></i><i></i></span>';wrap.appendChild(b);}
+   else{
+    const label=document.createElement("div");label.className="generation-label";label.textContent=m.mediaType==="video"?"Génération de la vidéo…":m.mediaType==="retouch"?"Génération de la retouche…":"Génération de la photo…";wrap.appendChild(label);
+    const f=document.createElement("div");f.className="generation-frame loading";f.dataset.loading="1";f.innerHTML='<div class="loader"></div>';wrap.appendChild(f);
+   }
  }
  if(m.result){
    const f=document.createElement("div");f.className="generation-frame";const src=resultUrl(m.result);const video=/\.(mp4|webm|mov|mkv)$/i.test(m.result.filename||"");
@@ -158,7 +161,7 @@ async function startChat(c,text){
  if(settings.system)messages.push({role:"system",content:settings.system});
  messages.push(...history);
  $("#send").disabled=true;
- const loading={role:"assistant",loading:true};
+ const loading={role:"assistant",loading:true,chatLoading:true};
  c.messages.push(loading);c.updatedAt=new Date().toISOString();save();renderMessage(loading);scrollBottom();
  try{
   const d=await api("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages,settings})});
