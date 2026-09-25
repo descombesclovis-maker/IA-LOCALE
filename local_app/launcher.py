@@ -5,6 +5,8 @@ from contextlib import redirect_stdout, redirect_stderr
 
 FROZEN = bool(getattr(sys, "frozen", False))
 ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 DATA = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData/Local"))) / "LocalVisionAI"
 os.environ["LOCALVISIONAI_DATA"] = str(DATA)
 LOG_DIR = DATA / "logs"
