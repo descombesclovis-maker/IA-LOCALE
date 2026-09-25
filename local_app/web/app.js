@@ -162,12 +162,12 @@ async function startChat(c,text){
  messages.push(...history);
  $("#send").disabled=true;
  const loading={role:"assistant",loading:true,chatLoading:true};
- c.messages.push(loading);c.updatedAt=new Date().toISOString();save();renderMessage(loading);scrollBottom();
+ c.messages.push(loading);c.updatedAt=new Date().toISOString();save();const loadingEl=renderMessage(loading);scrollBottom();
  try{
   const d=await api("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages,settings})});
-  c.messages=c.messages.filter(m=>m!==loading);c.messages.push({role:"assistant",text:d.message||"Le modèle local n’a renvoyé aucun texte."});c.updatedAt=new Date().toISOString();save();renderMessage(c.messages[c.messages.length-1]);scrollBottom();
+  loadingEl?.remove();c.messages=c.messages.filter(m=>m!==loading);c.messages.push({role:"assistant",text:d.message||"Le modèle local n’a renvoyé aucun texte."});c.updatedAt=new Date().toISOString();save();renderMessage(c.messages[c.messages.length-1]);scrollBottom();
  }catch(e){
-  c.messages=c.messages.filter(m=>m!==loading);c.updatedAt=new Date().toISOString();save();addMessage(id,{role:"assistant",text:"IA locale indisponible : "+e.message});toast(e.message);
+  loadingEl?.remove();c.messages=c.messages.filter(m=>m!==loading);c.updatedAt=new Date().toISOString();save();addMessage(id,{role:"assistant",text:"IA locale indisponible : "+e.message});toast(e.message);
  }finally{$("#send").disabled=false}
 }
 
