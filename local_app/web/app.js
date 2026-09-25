@@ -158,30 +158,33 @@ async function startGeneration(task,model,prompt){
  $("#send").disabled=true;
  try{
    const d=await api("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({workflow:model.id,prompt,negative:"",image:imageData?.data||null,image_name:imageData?.name||null,settings:readGenerationSettings()})});
-   await waitResult(d.prompt_id,id,model,prompt,task);
+   await waitResults(d.prompt_ids||[d.prompt_id].filter(Boolean),id,model,prompt,task);
  }catch(e){removeLoading(id);addMessage(id,{role:"assistant",text:"Erreur de génération : "+e.message});toast(e.message)}
  finally{$("#send").disabled=false}
 }
 
-async function waitResult(pid,id,model,prompt,task){
- for(let i=0;i<900;i++){
+async function waitResults(pids,id,model,prompt,task){
+ const pending=new Set(pids.filter(Boolean)), received=new Set();
+ if(!pending.size){removeLoading(id);addMessage(id,{role:"assistant",text:"Le moteur n’a pas accepté la génération."});return}
+ while(pending.size){
    await new Promise(r=>setTimeout(r,1000));
-   try{
-     const d=await api("/api/history/"+encodeURIComponent(pid)),h=d[pid];if(!h)continue;
-     if(h.status?.status_str==="error"||h.status?.status_str==="failed"){removeLoading(id);addMessage(id,{role:"assistant",text:"La génération a échoué."});return}
-     if(h.outputs){
+   for(const pid of [...pending]){
+     try{
+       const d=await api("/api/history/"+encodeURIComponent(pid)),h=d[pid];if(!h)continue;
+       if(h.status?.status_str==="error"||h.status?.status_str==="failed"){pending.delete(pid);continue}
+       if(!h.outputs)continue;
        let found=null;
        for(const o of Object.values(h.outputs)){if(o.images?.length){found=o.images[0];break}if(o.gifs?.length){found=o.gifs[0];break}}
-       if(found){
-         removeLoading(id);const c=conversationFor(id);c.messages.push({role:"assistant",result:found});c.updatedAt=new Date().toISOString();save();renderMessage(c.messages[c.messages.length-1]);scrollBottom();
-         addLibrary(found,resultKindForModel(model),prompt);return;
-       }
-     }
-   }catch(e){}
+       if(!found)continue;
+       pending.delete(pid);received.add(pid);
+       const c=conversationFor(id);c.messages=c.messages.filter(m=>!m.loading);c.messages.push({role:"assistant",result:found});c.updatedAt=new Date().toISOString();save();renderMessage(c.messages[c.messages.length-1]);scrollBottom();
+       addLibrary(found,resultKindForModel(model),prompt);
+     }catch(e){}
+   }
+   if(received.size)removeLoading(id);
  }
- removeLoading(id);addMessage(id,{role:"assistant",text:"La génération prend plus de temps que prévu."});
+ if(!received.size){removeLoading(id);addMessage(id,{role:"assistant",text:"La génération a échoué."});}else{removeLoading(id)}
 }
-
 function showSidebar(){$("#sidebar").classList.remove("closed")}
 function hideSidebar(){$("#sidebar").classList.add("closed")}
 
