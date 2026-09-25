@@ -8,9 +8,9 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-py -m pip install --upgrade pyinstaller
+py -m pip install --upgrade pyinstaller pywebview
 if errorlevel 1 goto FAIL
-pyinstaller --noconfirm --clean --onefile --windowed --name LocalVisionAI local_app\launcher.py
+pyinstaller --noconfirm --clean --onefile --windowed --name LocalVisionAI --collect-all webview local_app\launcher.py
 if errorlevel 1 goto FAIL
 copy /y dist\LocalVisionAI.exe "%USERPROFILE%\Desktop\LocalVisionAI.exe" >nul
 echo.
