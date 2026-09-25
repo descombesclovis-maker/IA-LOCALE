@@ -22,6 +22,10 @@ pyinstaller --noconfirm --clean --onefile --windowed --name LocalVisionAI ^
   --add-data "local_app\server.py;local_app" ^
   --add-data "local_app\llm.py;local_app" ^
   --add-data "workflows;workflows" ^
+  --add-data "Text to image flux.json;." ^
+  --add-data "text to image sdxl.json;." ^
+  --add-data "Image to video wan.json;." ^
+  --add-data "Text to Video LTX (très lourd).json;." ^
   local_app\launcher.py
 if errorlevel 1 goto FAIL
 
