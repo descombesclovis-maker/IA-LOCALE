@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s);
-let comfyReady=false,workflows=[],activeConversationId=null,imageData=null;
+let comfyReady=false,llmReady=false,workflows=[],activeConversationId=null,imageData=null;
 let conversations=loadJSON("lva_conversations_v2",{}),library=loadJSON("lva_library",[]);
 let modalSelection={image:null,video:null};
 let modalStep=1;
@@ -141,8 +141,7 @@ async function sendMessage(){
  addMessage(activeConversationId,{role:"user",text});$("#prompt").value="";$("#prompt").style.height="";
  const task=explicitGenerationRequest(text);
  if(!task){
-   // Aucun appel ComfyUI : le futur backend conversationnel répondra ici.
-   addMessage(activeConversationId,{role:"assistant",text:"Je suis en mode conversation. Aucune génération n’est lancée tant que tu ne me demandes pas explicitement de créer une image, une retouche ou une vidéo."});
+   await startChat(c,text);
    return;
  }
  const model=selectedModelForConversation(c,task);
@@ -151,6 +150,23 @@ async function sendMessage(){
 }
 
 function readGenerationSettings(){const seed=Number($("#settingSeed").value);return {quality:$("#settingQuality").value,aspect:$("#settingAspect").value,seed:Number.isFinite(seed)&&seed>0?seed:null,count:Number($("#settingCount").value)||1,enhance:$("#settingEnhance").checked,keepSeed:$("#settingKeep").checked};}
+function readChatSettings(){return {temperature:Math.min(2,Math.max(0,Number($("#settingTemperature").value)||0.7)),max_tokens:Math.min(8192,Math.max(128,Number($("#settingMaxTokens").value)||1024)),system:$("#settingSystem").value.trim()};}
+async function startChat(c,text){
+ const id=activeConversationId;
+ const history=c.messages.filter(m=>m.text&&!m.loading).map(m=>({role:m.role==="user"?"user":"assistant",content:m.text}));
+ const settings=readChatSettings(),messages=[];
+ if(settings.system)messages.push({role:"system",content:settings.system});
+ messages.push(...history);
+ $("#send").disabled=true;
+ const loading={role:"assistant",loading:true};
+ c.messages.push(loading);c.updatedAt=new Date().toISOString();save();renderMessage(loading);scrollBottom();
+ try{
+  const d=await api("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages,settings})});
+  c.messages=c.messages.filter(m=>m!==loading);c.messages.push({role:"assistant",text:d.message||"Le modèle local n’a renvoyé aucun texte."});c.updatedAt=new Date().toISOString();save();renderMessage(c.messages[c.messages.length-1]);scrollBottom();
+ }catch(e){
+  c.messages=c.messages.filter(m=>m!==loading);c.updatedAt=new Date().toISOString();save();addMessage(id,{role:"assistant",text:"IA locale indisponible : "+e.message});toast(e.message);
+ }finally{$("#send").disabled=false}
+}
 
 async function startGeneration(task,model,prompt){
  const id=activeConversationId;const c=conversationFor(id);
@@ -190,7 +206,7 @@ function hideSidebar(){$("#sidebar").classList.add("closed")}
 
 async function refresh(){
  comfyReady=false;
- try{const h=await api("/api/health");comfyReady=!!h.online;$("#statusText").textContent=h.online?"ComfyUI connecté":"ComfyUI arrêté";$(".status").className="status "+(h.online?"ok":"bad")}
+ try{const h=await api("/api/health");comfyReady=!!h.online;llmReady=!!h.llm?.online;$("#statusText").textContent=h.online?(llmReady?"Moteurs locaux connectés":"Image/vidéo connecté · IA texte à configurer"):"Moteurs locaux arrêtés";$(".status").className="status "+(h.online||llmReady?"ok":"bad")}
  catch(e){$("#statusText").textContent="Moteur indisponible";$(".status").className="status bad"}
  const d=await api("/api/workflows");workflows=d.workflows;
  renderConversationList($("#conversationSearch").value);renderLibraryCounts();
