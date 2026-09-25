@@ -26,7 +26,7 @@ jobs:
       - name: Build native executable
         shell: cmd
         run: |
-          pyinstaller --noconfirm --clean --onefile --windowed --name LocalVisionAI ^
+          pyinstaller --noconfirm --clean --onefile --windowed --noupx --name LocalVisionAI ^
             --collect-all webview ^
             --hidden-import local_app ^
             --hidden-import local_app.bootstrap_windows ^
