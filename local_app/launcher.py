@@ -13,18 +13,16 @@ LOG_DIR = DATA / "logs"
 LOG_FILE = LOG_DIR / "startup.log"
 
 
-def wait_for_server(timeout=900):
+def wait_for_server_interface(timeout=60):
     deadline=time.time()+timeout
     while time.time()<deadline:
         try:
             with urlopen("http://127.0.0.1:3000/api/health",timeout=3) as r:
                 if r.status==200:
-                    data=json.loads(r.read().decode("utf-8"))
-                    if data.get("online") and (data.get("llm") or {}).get("online"):
-                        return True
+                    return True
         except Exception:
             pass
-        time.sleep(1)
+        time.sleep(0.5)
     return False
 
 
@@ -46,23 +44,23 @@ def main():
             print("Root:", ROOT)
             print("Data:", DATA)
             try:
-                from local_app import bootstrap_windows
-                bootstrap_windows.run()
-
+                # The server/UI must never wait for multi-GB first-run downloads.
                 import local_app.server as server
-                server_thread=threading.Thread(target=server.main,daemon=True)
-                server_thread.start()
-                if not wait_for_server():
-                    raise RuntimeError("Les moteurs locaux n'ont pas répondu dans le délai prévu.")
+                threading.Thread(target=server.main, daemon=True).start()
+                if not wait_for_server_interface():
+                    raise RuntimeError("Le serveur LocalVisionAI n'a pas répondu dans le délai prévu.")
 
                 import webview
-                window=webview.create_window("LocalVisionAI","http://127.0.0.1:3000",width=1440,height=920,
-                                              min_size=(1100,700),resizable=True,background_color="#090909")
+                webview.create_window(
+                    "LocalVisionAI", "http://127.0.0.1:3000",
+                    width=1440, height=920, min_size=(1100,700),
+                    resizable=True, background_color="#090909"
+                )
                 webview.start(debug=False)
             except Exception as exc:
                 traceback.print_exc()
-                message = "LocalVisionAI n’a pas pu démarrer.\n\nConsulte le journal :\n" + str(LOG_FILE) + "\n\nErreur : " + str(exc)
-                show_error(message)
+                show_error("LocalVisionAI n’a pas pu démarrer.\n\nConsulte le journal :\n"
+                           + str(LOG_FILE) + "\n\nErreur : " + str(exc))
                 raise
 
 
