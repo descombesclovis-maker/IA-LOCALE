@@ -42,7 +42,8 @@ if defined COMFY_LAUNCHER (
 
 start "" /b %PYTHON_CMD% local_app\server.py
 timeout /t 2 /nobreak >nul
-echo Lancement de LocalVisionAI natif...\nstart "" /wait "%PYTHON_CMD%" local_app\launcher.py
+echo Lancement de LocalVisionAI natif...
+start "" /wait "%PYTHON_CMD%" local_app\launcher.py
 echo.
 echo Interface : http://127.0.0.1:3000
 echo.
