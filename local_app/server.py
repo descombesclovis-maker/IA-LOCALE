@@ -79,10 +79,16 @@ def ensure_comfyui(timeout=90):
             continue
         try:
             if kind == "bat":
+                # Do not use "start": its title/path parsing is fragile when
+                # launched from a frozen Python application and can produce
+                # Windows' "cannot find \\" errors. CALL executes the BAT
+                # with the exact absolute path while Popen keeps the UI free.
                 subprocess.Popen(
-                    ["cmd.exe", "/c", "start", '""', "/b", str(launcher)],
-                    cwd=str(root),
+                    ["cmd.exe", "/d", "/c", "call", str(launcher)],
+                    cwd=str(root.resolve()),
                     creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
                 )
             else:
                 py = root / "python_embeded" / "python.exe"
