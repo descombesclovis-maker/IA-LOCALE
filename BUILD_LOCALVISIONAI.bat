@@ -1,5 +1,5 @@
 @echo off
-setlocal
+setlocal EnableExtensions
 cd /d "%~dp0"
 title Build LocalVisionAI
 
@@ -35,18 +35,49 @@ pyinstaller --noconfirm --clean --onefile --windowed --noupx --name LocalVisionA
 
 if errorlevel 1 goto FAIL
 
-copy /y dist\LocalVisionAI.exe "%USERPROFILE%\Desktop\LocalVisionAI.exe" >nul
-if errorlevel 1 goto FAIL
+if not exist "dist\LocalVisionAI.exe" goto FAIL
 
 echo.
-echo LocalVisionAI.exe a ete cree sur le Bureau.
-echo Double-clique directement sur cet EXE : aucun navigateur ne sera utilise.
+echo ==========================================
+echo BUILD TERMINE AVEC SUCCES
+echo ==========================================
+echo.
+echo EXE cree :
+echo %CD%\dist\LocalVisionAI.exe
+echo.
+
+rem Resolve the real Windows Desktop location (also works with OneDrive).
+for /f "usebackq delims=" %%D in (`powershell -NoProfile -Command "[Environment]::GetFolderPath('Desktop')"`) do set "DESKTOP=%%D"
+
+if defined DESKTOP if exist "%DESKTOP%" (
+  copy /y "dist\LocalVisionAI.exe" "%DESKTOP%\LocalVisionAI.exe" >nul
+  if not errorlevel 1 (
+    echo Copie sur le Bureau :
+    echo %DESKTOP%\LocalVisionAI.exe
+  ) else (
+    echo Copie Bureau impossible.
+    echo Utilise directement :
+    echo %CD%\dist\LocalVisionAI.exe
+  )
+) else (
+  echo Bureau Windows introuvable.
+  echo Utilise directement :
+  echo %CD%\dist\LocalVisionAI.exe
+)
+
+echo.
+echo ATTENTION : lance uniquement LocalVisionAI.exe.
+echo Aucun navigateur ne doit etre necessaire.
 echo.
 pause
 exit /b 0
 
 :FAIL
 echo.
-echo Echec de construction. Consulte les messages ci-dessus.
+echo ==========================================
+echo ECHEC DE CONSTRUCTION
+echo ==========================================
+echo.
+echo Consulte les messages ci-dessus.
 pause
 exit /b 1
