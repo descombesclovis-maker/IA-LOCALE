@@ -10,7 +10,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-py -m pip install --upgrade pyinstaller pywebview
+py -m pip install --upgrade "pyinstaller==6.22.1" "pywebview==6.2.1"
 if errorlevel 1 goto FAIL
 
 if exist build rmdir /s /q build
@@ -35,7 +35,14 @@ pyinstaller --noconfirm --clean --onefile --windowed --noupx --name LocalVisionA
 
 if errorlevel 1 goto FAIL
 
-if not exist "dist\LocalVisionAI.exe" goto FAIL
+if not exist "dist\\LocalVisionAI.exe" goto FAIL
+
+rem Validate that PyInstaller can read the embedded archive before copying the EXE.
+py -c "from PyInstaller.archive.readers import CArchiveReader; CArchiveReader(r'dist\\LocalVisionAI.exe'); print('Archive PyInstaller valide.')"
+if errorlevel 1 (
+  echo Archive PyInstaller invalide : EXE rejete.
+  goto FAIL
+)
 
 echo.
 echo ==========================================
