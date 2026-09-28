@@ -52,7 +52,6 @@ def wait_for_interface(process, timeout=90):
 
 
 def main():
-    multiprocessing.freeze_support()
     DATA.mkdir(parents=True, exist_ok=True)
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 
