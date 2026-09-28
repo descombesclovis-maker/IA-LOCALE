@@ -30,7 +30,7 @@ pyinstaller --noconfirm --clean --onefile --windowed --noupx --name LocalVisionA
   --add-data "Text to image flux.json;." ^
   --add-data "text to image sdxl.json;." ^
   --add-data "Image to video wan.json;." ^
-  --add-data "Text to Video LTX (très lourd).json;." ^
+  --add-data "Text_to_Video_LTX.json;." ^
   local_app\launcher.py
 
 if errorlevel 1 goto FAIL
